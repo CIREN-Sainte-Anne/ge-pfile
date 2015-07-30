@@ -1,13 +1,8 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Jul 29 16:30:04 2015
+__author__ = 'roca'
 
-@author: roca
-"""
 import os
 
 exten = '.7'
-
 pfiles_list = []
 #function to launch at each iteration of walk:
 def step(ext, dirname, names):
@@ -68,8 +63,5 @@ for i in xrange(pfiles_nb):
     cmd=printrawcmdfname + ' ' + pfile_pathname + ">>" + ouputPrintRawFname
     os.system(cmd)
 
-# Fill file
-# file with te list of all pfiles (.7) in the previous POOLS with:
-# pathname, nameofbirth, MRI acq date, size in bytes, pathname
 
 
