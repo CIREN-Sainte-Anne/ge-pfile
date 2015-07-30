@@ -7,14 +7,27 @@ __author__ = 'roca'
 
 from rawpfile import printrawpfile_reader as prp
 import os
-import datatest as data
+import pandas
 
-dataPath = os.path.dirname(data.__file__)
+def printInfosFromPfileHdrInStream(printrawpfile_hdr_fname, stream):
+    rawPfile_reader = prp.PrintRawPfileHdrReader(printrawpfile_hdr_fname)
+    print >> stream, rawPfile_reader.getFormatedValuesInStringForCsvFile() +";" + \
+                     printrawpfile_hdr_fname.replace('_','/').replace('.txt','.7')
+    return True
 
-printRawPfileHdrFname = os.path.join(dataPath,'printraw.txt')
+workdir = '/home/roca/Documents/projets/flow/suivi/sujet_reorga_28_07_2015/workdir/'
+printrawpfile_hdr_dir = os.path.join(workdir,'pfilesheader')
+printrawpfile_hdr_fnames = os.listdir(printrawpfile_hdr_dir)
+printrawpfile_hdr_fnames = map(lambda fname: os.path.join(printrawpfile_hdr_dir, fname),printrawpfile_hdr_fnames)
+output_csv_fname = os.path.join(workdir,'infos_from_pfilesheader.csv')
 
-rawPfile_reader = prp.PrintRawPfileHdrReader(printRawPfileHdrFname)
+f = open(output_csv_fname,"w")
+reader = prp.PrintRawPfileHdrReader()
+print >> f, reader.getFormatedKeysInStringForCsvFile()
+map(lambda fname: printInfosFromPfileHdrInStream(fname,f),printrawpfile_hdr_fnames)
+f.close()
 
 
-print rawPfile_reader.getValuesInString()
-
+# demain:
+list_of_pfiles_info_fname = os.path.join(workdir,'pfile_path_and_size_29_07_2015_.csv')
+pfiles_df = pandas.read_csv(list_of_pfiles_info_fname,sep = ";",encoding='utf-8')

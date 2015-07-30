@@ -8,17 +8,26 @@ import re
 
 
 class PrintRawPfileHdrReader():
-    def __init__(self,printrawPfileHdr_fname):
+    def __init__(self,printrawPfileHdr_fname = None):
         self.printrawPfileHdr_fname = printrawPfileHdr_fname
-        file = open(printrawPfileHdr_fname, 'r')
-        self.printrawPfileHdr = file.read()
-        file.close()
+        self.printrawPfileHdr = None
         self.paragraphList = None
         self.SeriesHdrDict = None
         self.ExamHdrDict = None
-        self.setParagraphList()
-        self.setDictFromExamHeader()
-        self.setDictFromSeriesHeader()
+        self.ExamHeaderListOfKeysToExtract = ['patnameff','patage','patsex', 'dateofbirth', 'ex_datetime',\
+                                                      'ex_desc','ex_verscre','ex_verscur']
+        self.ExamHeaderListOfKeysToExtractGoodNames = 'nom;prenom;age;sex;date_de_naissance;mrscan_start_time;'\
+                'exam_desc;version1;version2'
+        self.SeriesHeaderListOfKeysToExtract = ['se_desc','se_actual_dt','prtcl']
+        self.SeriesHeaderListOfKeysToExtractGoodNames = 'seq_name;mrscan_end_exam;protocol'
+
+        if self.printrawPfileHdr_fname:
+            file = open(printrawPfileHdr_fname, 'r')
+            self.printrawPfileHdr = file.read()
+            file.close()
+            self.setParagraphList()
+            self.setDictFromExamHeader()
+            self.setDictFromSeriesHeader()
 
     def setParagraphList(self):
         self.paragraphList = re.split(r'\n{2,}', self.printrawPfileHdr)
@@ -37,47 +46,60 @@ class PrintRawPfileHdrReader():
         for matchObj in matchObjList:
             if matchObj!= None:
                 dictObj[matchObj.group(1)] = matchObj.group(2)
-        if dictObj.has_key('ex_datetime'):
-            dictObj['ex_datetime'] = dictObj['ex_datetime'].replace(' ','-')
-            dictObj['ex_datetime'] = dictObj['ex_datetime'].replace('--','-')
         for key in dictObj.keys():
-            dictObj[key] = dictObj[key].replace(' ','')
+            if key == 'ex_datetime' or key == 'se_actual_dt':
+                dictObj[key] = dictObj[key].replace(' ','-')
+                dictObj[key] = dictObj[key].replace('--','-')
+            else:
+                dictObj[key] = dictObj[key].replace(' ','')
         return dictObj
 
-    def setDictFromSeriesHeader(self):
-        series_header = self.paragraphList[5]
-        series_header_list = re.split(r'\n{1,}', series_header)
-        series_header_list = [ re.sub(r'\t', '', line) for line in series_header_list ]
-        self.SeriesHdrDict = series_header_list
-
     def setDictFromExamHeader(self):
-        exam_header = self.paragraphList[4]
-        exam_header_list = re.split(r'\n{1,}', exam_header)
-        exam_header_list = [ re.sub(r'\t', '', line) for line in exam_header_list ]
-        matchObjList = map(lambda line: re.match(r'(.*) = (.*)',line),exam_header_list)
-        dictObj = {}
-        for matchObj in matchObjList:
-            if matchObj!= None:
-                dictObj[matchObj.group(1)] = matchObj.group(2)
-        if dictObj.has_key('ex_datetime'):
-            dictObj['ex_datetime'] = dictObj['ex_datetime'].replace(' ','-')
-            dictObj['ex_datetime'] = dictObj['ex_datetime'].replace('--','-')
-        for key in dictObj.keys():
-            dictObj[key] = dictObj[key].replace(' ','')
-        self.ExamHdrDict = dictObj
+        if len(self.paragraphList)>=5:
+            self.ExamHdrDict = self.paragraphToDict(self.paragraphList[4])
 
-    def getValuesInString(self,list_of_keys=['patnameff','patage','patsex', 'dateofbirth', 'ex_datetime',\
-                                                      'ex_desc','ex_verscre','ex_verscur'], delimiter = ";"):
+    def setDictFromSeriesHeader(self):
+        if len(self.paragraphList)>=6:
+            self.SeriesHdrDict = self.paragraphToDict(self.paragraphList[5])
+
+    def getValuesInStringFromExamHdrDict(self, delimiter = ";"):
         output_string = ""
-        for key in list_of_keys:
-            if self.ExamHdrDict.has_key(key):
-                if key == 'patnameff':
-                    output_string += self.ExamHdrDict[key].replace("^",delimiter) + delimiter
+        for key in self.ExamHeaderListOfKeysToExtract:
+            if self.ExamHdrDict:
+                if self.ExamHdrDict.has_key(key):
+                    if key == 'patnameff':
+                        if self.ExamHdrDict[key].count('^'):
+                            output_string += self.ExamHdrDict[key].replace("^",delimiter) + delimiter
+                        else:
+                            if self.ExamHdrDict[key]== "":
+                                output_string += 'Nan' + delimiter + 'NaN' + delimiter
+                            else:
+                                output_string += self.ExamHdrDict[key] + delimiter + 'NaN' + delimiter
+                    elif self.ExamHdrDict[key]== "":
+                        output_string += 'NaN' + delimiter
+                    else:
+                        output_string += self.ExamHdrDict[key] + delimiter
                 else:
-                    output_string += self.ExamHdrDict[key] + delimiter
+                    if key == 'patnameff':
+                        output_string += 'NaN' + delimiter + 'Nan' + delimiter
+                    else:   output_string += 'NaN' + delimiter
+            else:
+                output_string += 'NaN' + delimiter
+        if not self.ExamHdrDict:
+            output_string += 'NaN' + delimiter
+        return output_string[:-1]
+
+    def getValuesInStringFromSeriesHdrDict(self, delimiter = ";"):
+        output_string = ""
+        for key in self.SeriesHeaderListOfKeysToExtract:
+            if self.SeriesHdrDict:
+                if self.SeriesHdrDict.has_key(key):
+                    output_string += self.SeriesHdrDict[key] + delimiter
+                else:
+                    output_string += 'NaN' + delimiter
             else:
                 output_string += delimiter
-        return output_string
+        return output_string[:-1]
 
     def getVersionNb(self):
         global_header = self.paragraphList[0]
@@ -85,4 +107,11 @@ class PrintRawPfileHdrReader():
         version_info = global_header_list[0]
         version_nb = version_info.split(',')[1].split('=')[1].replace(' ','')
         return version_nb
+
+    def getFormatedValuesInStringForCsvFile(self):
+        return self.getValuesInStringFromExamHdrDict() + ";" + self.getValuesInStringFromSeriesHdrDict()
+
+    def getFormatedKeysInStringForCsvFile(self):
+        return self.ExamHeaderListOfKeysToExtractGoodNames +";" + self.SeriesHeaderListOfKeysToExtractGoodNames
+
 
