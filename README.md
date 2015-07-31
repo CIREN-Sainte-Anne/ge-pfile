@@ -4,3 +4,4 @@ INSTALLATION
 example for .bashrc file :
 export ORGAPFILES_ROOTPATH=$HOME/Documents/ciren/development/organizing_pfiles
 export PATH=$ORGAPFILES_ROOTPATH/bin:$PATH
+
