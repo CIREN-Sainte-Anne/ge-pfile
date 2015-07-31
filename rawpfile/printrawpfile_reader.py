@@ -115,3 +115,7 @@ class PrintRawPfileHdrReader():
         return self.ExamHeaderListOfKeysToExtractGoodNames +";" + self.SeriesHeaderListOfKeysToExtractGoodNames
 
 
+
+
+
+

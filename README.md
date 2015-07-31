@@ -1,3 +1,6 @@
-installation:
-add the following line in your .bashrc:
-export PYTHONPATH=/home/roca/Documents/ciren/development/organizing_pfiles:$PYTHONPATH
+INSTALLATION
+  - add ./organizing_pfiles/bin to your PATH
+
+example for .bashrc file :
+export ORGAPFILES_ROOTPATH=$HOME/Documents/ciren/development/organizing_pfiles
+export PATH=$ORGAPFILES_ROOTPATH/bin:$PATH
