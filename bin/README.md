@@ -1,0 +1,2 @@
+#printraw binary comes from http://rsl.stanford.edu/research/software.html
+(free software, DEVELOPED AND MADE AVAILABLE WITH SUPPORT FROM The NIH National Institute of Biomedical Imaging and Bioengineering )
